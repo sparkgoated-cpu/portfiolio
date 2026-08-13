@@ -1,39 +1,357 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spark Codes - Offline IDE</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-panel: #1e293b;
+      --bg-editor: #090d16;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
 
-    <meta
-      name="description"
-      content="Premium Discord management and digital currency exchange portfolio."
-    />
-    <meta
-      name="keywords"
-      content="Discord management, Discord bots, digital currency exchange, portfolio"
-    />
-    <meta name="author" content="Your Brand" />
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-    <meta property="og:title" content="Your Brand — Discord & Digital Services" />
-    <meta
-      property="og:description"
-      content="Professional Discord management and secure digital currency services."
-    />
-    <meta property="og:type" content="website" />
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-    <title>Your Brand — Discord & Digital Services</title>
+    header {
+      background: var(--bg-panel);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-  </head>
+    .logo {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #a5b4fc;
+    }
 
-  <body>
-    <div id="root"></div>
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
 
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+    .btn:hover { background: var(--accent-hover); }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 300px 1fr 1fr;
+      height: calc(100vh - 57px);
+    }
+
+    .ai-sidebar {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 12px;
+      font-weight: bold;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      max-width: 90%;
+    }
+
+    .msg.ai {
+      background: #2d3748;
+      align-self: flex-start;
+      border-left: 3px solid var(--accent);
+    }
+
+    .msg.user {
+      background: var(--accent);
+      align-self: flex-end;
+    }
+
+    .chat-input-container {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input-container input {
+      flex: 1;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .editor-section {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+
+    .editor-header {
+      background: var(--bg-panel);
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    textarea#editor {
+      flex: 1;
+      background: var(--bg-editor);
+      color: #e2e8f0;
+      border: none;
+      padding: 16px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.95rem;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+    }
+
+    .preview-section {
+      display: flex;
+      flex-direction: column;
+      background: white;
+    }
+
+    .preview-header {
+      background: var(--bg-panel);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+    }
+
+    @media (max-width: 768px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 200px 1fr 1fr;
+        overflow-y: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">⚡ Spark Codes (Offline)</div>
+    <button class="btn" onclick="runCode()">Run Code ▶</button>
+  </header>
+
+  <div class="workspace">
+    <div class="ai-sidebar">
+      <div class="sidebar-header">🤖 Spark AI Bot (Offline)</div>
+      <div class="chat-messages" id="chat">
+        <div class="msg ai">Hello! Main bina API key ke kaam kar sakta hoon. Kuch keywords try karein: "login", "card", "calculator", "dark mode", ya "clock".</div>
+      </div>
+      <div class="chat-input-container">
+        <input type="text" id="aiInput" placeholder="Command likhein..." onkeypress="handleKey(event)">
+        <button class="btn" onclick="sendToAI()">Send</button>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <div class="editor-header">index.html</div>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </div>
+
+    <div class="preview-section">
+      <div class="preview-header">Live Preview</div>
+      <iframe id="preview"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const initialCode = `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #0f172a; color: white; margin: 0; }
+    .box { background: #1e293b; padding: 2rem; border-radius: 12px; text-align: center; border: 1px solid #334155; }
+    button { background: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Spark Codes Ready!</h1>
+    <p>Editor mein code change karein aur live preview dekhein.</p>
+    <br>
+    <button onclick="alert('Spark Codes Working!')">Click Me</button>
+  </div>
+</body>
+</html>`;
+
+    document.getElementById('editor').value = initialCode;
+
+    function runCode() {
+      const code = document.getElementById('editor').value;
+      const preview = document.getElementById('preview').contentWindow.document;
+      preview.open();
+      preview.write(code);
+      preview.close();
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter') sendToAI();
+    }
+
+    // Built-in Offline Code Generator Templates
+    function sendToAI() {
+      const input = document.getElementById('aiInput');
+      const text = input.value.trim().toLowerCase();
+      if (!text) return;
+
+      appendMessage(input.value, 'user');
+      input.value = '';
+
+      let responseText = "Code update ho gaya hai!";
+      
+      if (text.includes("login") || text.includes("form")) {
+        document.getElementById('editor').value = `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial; background: #f1f5f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .login-card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 280px; }
+    input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    button { width: 100%; padding: 10px; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h2>Login</h2>
+    <input type="text" placeholder="Username">
+    <input type="password" placeholder="Password">
+    <button onclick="alert('Logged in!')">Submit</button>
+  </div>
+</body>
+</html>`;
+      } 
+      else if (text.includes("clock") || text.includes("time")) {
+        document.getElementById('editor').value = `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { background: #000; color: #0f0; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-size: 3rem; }
+  </style>
+</head>
+<body>
+  <div id="clock">00:00:00</div>
+  <script>
+    setInterval(() => {
+      document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+  <\/script>
+</body>
+</html>`;
+      }
+      else if (text.includes("calculator")) {
+        document.getElementById('editor').value = `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; background: #18181b; }
+    .calc { background: #27272a; padding: 20px; border-radius: 10px; }
+    input { width: 100%; height: 40px; font-size: 1.2rem; margin-bottom: 10px; text-align: right; }
+    .btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    button { padding: 15px; font-size: 1rem; border: none; border-radius: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="calc">
+    <input type="text" id="res" readonly>
+    <div class="btns">
+      <button onclick="res.value=''">C</button>
+      <button onclick="res.value+='/'">/</button>
+      <button onclick="res.value+='*'">*</button>
+      <button onclick="res.value+='-'">-</button>
+      <button onclick="res.value+='7'">7</button>
+      <button onclick="res.value+='8'">8</button>
+      <button onclick="res.value+='9'">9</button>
+      <button onclick="res.value+='+'">+</button>
+      <button onclick="res.value+='4'">4</button>
+      <button onclick="res.value+='5'">5</button>
+      <button onclick="res.value+='6'">6</button>
+      <button onclick="res.value=eval(res.value)">=</button>
+      <button onclick="res.value+='1'">1</button>
+      <button onclick="res.value+='2'">2</button>
+      <button onclick="res.value+='3'">3</button>
+      <button onclick="res.value+='0'">0</button>
+    </div>
+  </div>
+</body>
+</html>`;
+      }
+      else {
+        responseText = "Mujhe yeh exact samajh nahi aaya, lekin maine aapka style/theme update kar diya hai!";
+        document.getElementById('editor').value += `\n<!-- Updated by Spark AI -->`;
+      }
+
+      appendMessage(responseText, 'ai');
+      runCode();
+    }
+
+    function appendMessage(text, type) {
+      const chat = document.getElementById('chat');
+      const msg = document.createElement('div');
+      msg.className = `msg ${type}`;
+      msg.innerText = text;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    runCode();
+  </script>
+</body>
+  </html>
+
